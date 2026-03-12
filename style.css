@@ -220,7 +220,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 100px 20px 50px;
+  padding: 120px 20px 80px;
   position: relative;
   background: radial-gradient(circle at 20% 50%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
               radial-gradient(circle at 80% 50%, rgba(255, 0, 255, 0.1) 0%, transparent 50%);
@@ -228,10 +228,16 @@ body {
 
 .hero-content {
   max-width: 1200px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: row;
   gap: 60px;
   align-items: center;
+  width: 100%;
+}
+
+.hero-text {
+  flex: 1;
+  max-width: 600px;
 }
 
 .hero-text h1 {
@@ -242,6 +248,28 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  line-height: 1.1;
+}
+
+.hero-text h2 {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.hero-subtitle {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  margin-bottom: 30px;
+  line-height: 1.6;
+  max-width: 500px;
+}
+
+.hero-visual {
+  flex: 1;
+  max-width: 500px;
 }
 
 .glitch {
@@ -1331,29 +1359,43 @@ section {
   
   /* Hero Section - Fix overlapping */
   .hero {
-    padding: 120px 15px 60px;
+    padding: 140px 15px 80px;
     min-height: auto;
   }
   
   .hero-content {
-    gap: 30px;
+    flex-direction: column;
+    gap: 40px;
+    text-align: center;
+  }
+  
+  .hero-text {
+    max-width: 100%;
+    order: 2;
+  }
+  
+  .hero-visual {
+    order: 1;
+    max-width: 100%;
   }
   
   .hero-text h1 {
     font-size: 2.5rem;
-    line-height: 1.2;
+    line-height: 1.1;
     margin-bottom: 15px;
   }
   
   .hero-text h2 {
     font-size: 1.5rem;
-    margin-bottom: 15px;
+    margin-bottom: 12px;
+    line-height: 1.2;
   }
   
   .hero-subtitle {
     font-size: 1rem;
     margin-bottom: 25px;
     line-height: 1.5;
+    max-width: 100%;
   }
   
   .hero-buttons {
@@ -1512,23 +1554,29 @@ section {
   
   /* Hero Section - Small mobile optimization */
   .hero {
-    padding: 100px 10px 50px;
+    padding: 120px 10px 60px;
+  }
+  
+  .hero-content {
+    gap: 30px;
   }
   
   .hero-text h1 {
     font-size: 2rem;
-    line-height: 1.1;
-    margin-bottom: 10px;
+    line-height: 1.0;
+    margin-bottom: 12px;
   }
   
   .hero-text h2 {
     font-size: 1.2rem;
     margin-bottom: 10px;
+    line-height: 1.1;
   }
   
   .hero-subtitle {
     font-size: 0.9rem;
     margin-bottom: 20px;
+    line-height: 1.4;
   }
   
   .hero-buttons {
@@ -1720,12 +1768,30 @@ section {
 
 /* Extra small devices */
 @media (max-width: 360px) {
+  .hero {
+    padding: 110px 8px 50px;
+  }
+  
+  .hero-content {
+    gap: 25px;
+  }
+  
   .hero-text h1 {
     font-size: 1.8rem;
+    line-height: 1.0;
+    margin-bottom: 10px;
   }
   
   .hero-text h2 {
     font-size: 1.1rem;
+    margin-bottom: 8px;
+    line-height: 1.1;
+  }
+  
+  .hero-subtitle {
+    font-size: 0.85rem;
+    margin-bottom: 18px;
+    line-height: 1.3;
   }
   
   .section-title {

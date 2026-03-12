@@ -397,6 +397,167 @@ cursorStyles.textContent = `
 `;
 document.head.appendChild(cursorStyles);
 
-console.log('🚀 Portfolio initialized successfully!');
-console.log('💻 Built with modern web technologies');
-console.log('🎨 Futuristic design with smooth animations');
+// Auto-adjust viewport for each section
+function adjustViewportForSection(sectionId) {
+  const section = document.getElementById(sectionId);
+  if (!section) return;
+  
+  // Get section dimensions
+  const sectionHeight = section.offsetHeight;
+  const viewportHeight = window.innerHeight;
+  
+  // Calculate optimal padding and spacing for this section
+  const sectionType = sectionId.replace('#', '');
+  let optimalPadding = 80; // Default
+  
+  switch(sectionType) {
+    case 'home':
+      optimalPadding = Math.max(120, viewportHeight * 0.1);
+      break;
+    case 'about':
+    case 'skills':
+    case 'experience':
+    case 'certificates':
+      optimalPadding = Math.max(80, viewportHeight * 0.08);
+      break;
+    case 'projects':
+      optimalPadding = Math.max(100, viewportHeight * 0.09);
+      break;
+    case 'contact':
+      optimalPadding = Math.max(120, viewportHeight * 0.1);
+      break;
+  }
+  
+  // Apply dynamic padding based on content
+  const sectionContent = section.querySelector('.container, .section-header');
+  if (sectionContent) {
+    const contentHeight = sectionContent.offsetHeight;
+    if (contentHeight > viewportHeight * 0.8) {
+      // For long content, ensure full visibility
+      section.style.minHeight = 'auto';
+      section.style.paddingTop = `${optimalPadding}px`;
+      section.style.paddingBottom = `${optimalPadding}px`;
+    } else {
+      // For shorter content, center it nicely
+      section.style.minHeight = `${viewportHeight}px`;
+      section.style.paddingTop = `${optimalPadding}px`;
+      section.style.paddingBottom = `${optimalPadding}px`;
+    }
+  }
+}
+
+// Enhanced smooth scroll with viewport adjustment
+function smoothScrollToSection(sectionId) {
+  const section = document.getElementById(sectionId);
+  if (!section) return;
+  
+  // Adjust viewport for this section first
+  adjustViewportForSection(sectionId);
+  
+  // Small delay to allow layout adjustment
+  setTimeout(() => {
+    const sectionTop = section.offsetTop - 80; // Account for fixed navbar
+    
+    window.scrollTo({
+      top: sectionTop,
+      behavior: 'smooth'
+    });
+    
+    // Update active nav link
+    updateActiveNavLink();
+  }, 100);
+}
+
+// Auto-adjust all visible sections on load
+function autoAdjustAllSections() {
+  const sections = document.querySelectorAll('section[id]');
+  sections.forEach(section => {
+    adjustViewportForSection(section.id);
+  });
+}
+
+// Auto-adjust on window resize with debouncing
+let resizeTimeout;
+function handleResize() {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(() => {
+    autoAdjustAllSections();
+  }, 250);
+}
+
+// Active Navigation Link on Scroll (Enhanced with auto-adjustment)
+function updateActiveNavLink() {
+  const sections = document.querySelectorAll('section[id]');
+  const scrollY = window.pageYOffset;
+
+  sections.forEach(section => {
+    const sectionHeight = section.offsetHeight;
+    const sectionTop = section.offsetTop - 100;
+    const sectionId = section.getAttribute('id');
+    const navLink = document.querySelector(`.nav-link[href="#${sectionId}"]`);
+
+    if (scrollY > sectionTop && scrollY <= sectionTop + sectionHeight) {
+      navLinks.forEach(link => link.classList.remove('active'));
+      navLink?.classList.add('active');
+      
+      // Auto-adjust viewport for the current section
+      adjustViewportForSection(sectionId);
+    }
+  });
+}
+
+// Replace existing navigation event listeners
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', function (e) {
+    e.preventDefault();
+    const targetId = this.getAttribute('href').substring(1);
+    smoothScrollToSection(targetId);
+  });
+});
+
+// Initialize auto-adjustment system
+window.addEventListener('load', () => {
+  autoAdjustAllSections();
+  
+  // Re-adjust after loading animations complete
+  setTimeout(autoAdjustAllSections, 2000);
+});
+
+window.addEventListener('resize', handleResize);
+
+// Debounced scroll handler for performance
+let scrollTimeout;
+window.addEventListener('scroll', () => {
+  clearTimeout(scrollTimeout);
+  scrollTimeout = setTimeout(() => {
+    updateActiveNavLink();
+  }, 100);
+});
+
+// Auto-adjust when navigating via browser back/forward
+window.addEventListener('popstate', () => {
+  setTimeout(autoAdjustAllSections, 100);
+});
+
+// Dynamic viewport height adjustment for mobile devices
+function handleMobileViewport() {
+  const isMobile = window.innerWidth <= 768;
+  if (isMobile) {
+    // Adjust for mobile viewport issues
+    const vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+    
+    // Re-adjust sections for mobile
+    autoAdjustAllSections();
+  }
+}
+
+// Initialize mobile viewport handling
+handleMobileViewport();
+window.addEventListener('orientationchange', () => {
+  setTimeout(handleMobileViewport, 100);
+});
+
+console.log('🚀 Auto-adjustment system initialized');
+console.log('📱 Dynamic viewport handling enabled');
+console.log('🎯 Section-based optimization active');

